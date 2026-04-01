@@ -22,13 +22,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_ITEMS = [
   { icon: MessageSquare, label: "Live Chat", active: true },
-  { icon: BarChart3, label: "Analytics" },
-  { icon: Bell, label: "Notifications", badge: 3 },
-  { icon: Search, label: "Search" },
-  { icon: Zap, label: "Automations" },
-  { icon: Headphones, label: "Voice" },
-  { icon: HelpCircle, label: "Help Center" },
-  { icon: Settings, label: "Settings" },
 ];
 
 const THEME_OPTIONS = [
