@@ -78,15 +78,6 @@ const AppSidebar = () => {
                 </motion.span>
               )}
             </AnimatePresence>
-            {item.badge && (
-              <span
-                className={`ml-auto shrink-0 min-w-5 h-5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold ${
-                  collapsed ? "absolute -top-1 -right-1 min-w-4 h-4 text-[9px]" : ""
-                }`}
-              >
-                {item.badge}
-              </span>
-            )}
             {/* Tooltip on collapsed */}
             {collapsed && (
               <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-foreground text-background text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
