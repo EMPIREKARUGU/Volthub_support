@@ -4,6 +4,7 @@ import ChatBubble, { type ChatMessage } from "@/components/chat/ChatBubble";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import MessageInput from "@/components/chat/MessageInput";
 import InfoPanel from "@/components/chat/InfoPanel";
+import AppSidebar from "@/components/chat/AppSidebar";
 import { AnimatePresence } from "framer-motion";
 
 const INITIAL_MESSAGES: ChatMessage[] = [
@@ -92,6 +93,9 @@ const Index = () => {
 
   return (
     <div className="h-screen flex bg-background">
+      {/* Sidebar */}
+      <AppSidebar />
+
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar
