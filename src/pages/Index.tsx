@@ -4,6 +4,7 @@ import ChatBubble, { type ChatMessage } from "@/components/chat/ChatBubble";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import MessageInput from "@/components/chat/MessageInput";
 import InfoPanel from "@/components/chat/InfoPanel";
+import AppSidebar from "@/components/chat/AppSidebar";
 import { AnimatePresence } from "framer-motion";
 
 const INITIAL_MESSAGES: ChatMessage[] = [
