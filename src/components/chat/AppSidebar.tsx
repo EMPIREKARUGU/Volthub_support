@@ -1,8 +1,6 @@
 import { useState } from "react";
 import {
   MessageSquare,
-  BarChart3,
-  Settings,
   Sun,
   Moon,
   Monitor,
@@ -11,10 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Headphones,
-  Zap,
-  Bell,
-  Search,
-  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
@@ -22,13 +16,6 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_ITEMS = [
   { icon: MessageSquare, label: "Live Chat", active: true },
-  { icon: BarChart3, label: "Analytics" },
-  { icon: Bell, label: "Notifications", badge: 3 },
-  { icon: Search, label: "Search" },
-  { icon: Zap, label: "Automations" },
-  { icon: Headphones, label: "Voice" },
-  { icon: HelpCircle, label: "Help Center" },
-  { icon: Settings, label: "Settings" },
 ];
 
 const THEME_OPTIONS = [
@@ -91,15 +78,6 @@ const AppSidebar = () => {
                 </motion.span>
               )}
             </AnimatePresence>
-            {item.badge && (
-              <span
-                className={`ml-auto shrink-0 min-w-5 h-5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold ${
-                  collapsed ? "absolute -top-1 -right-1 min-w-4 h-4 text-[9px]" : ""
-                }`}
-              >
-                {item.badge}
-              </span>
-            )}
             {/* Tooltip on collapsed */}
             {collapsed && (
               <span className="absolute left-full ml-2 px-2 py-1 rounded-md bg-foreground text-background text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
