@@ -1,8 +1,6 @@
 import { useState } from "react";
 import {
   MessageSquare,
-  BarChart3,
-  Settings,
   Sun,
   Moon,
   Monitor,
@@ -11,10 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Headphones,
-  Zap,
-  Bell,
-  Search,
-  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
