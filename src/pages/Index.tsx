@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import TopBar from "@/components/chat/TopBar";
 import ChatBubble, { type ChatMessage } from "@/components/chat/ChatBubble";
 import TypingIndicator from "@/components/chat/TypingIndicator";
@@ -6,122 +6,176 @@ import MessageInput from "@/components/chat/MessageInput";
 import InfoPanel from "@/components/chat/InfoPanel";
 import AppSidebar from "@/components/chat/AppSidebar";
 import { AnimatePresence } from "framer-motion";
+import { askQuestion } from "@/lib/api";
 
-const INITIAL_MESSAGES: ChatMessage[] = [
+const PRODUCT_RECOMMENDATION_RULES: {
+  keywords: string[];
+  recommendations: { title: string; subtitle: string; icon: "shopping" | "star" | "info" }[];
+}[] = [
   {
-    id: "1",
-    text: "Hi, I'm having trouble accessing my billing portal. It keeps showing a 'session expired' error after I reset my password.",
-    sender: "customer",
-    timestamp: new Date(Date.now() - 120000),
+    keywords: ["headphone", "headset", "audio", "earbud"],
+    recommendations: [
+      { title: "Volthub Wireless Headset", subtitle: "$49.99 · Fast shipping", icon: "shopping" },
+      { title: "Noise-canceling Earbuds", subtitle: "$29.99 · Top rated", icon: "star" },
+    ],
   },
   {
-    id: "2",
-    text: "Hi Sarah! I'm sorry to hear that. Let me look into your account right away. Can you confirm the email address you used for the password reset?",
-    sender: "agent",
-    timestamp: new Date(Date.now() - 90000),
+    keywords: ["charger", "battery", "power"],
+    recommendations: [
+      { title: "Volthub Smart Charger", subtitle: "$24.99 · 1-year warranty", icon: "shopping" },
+      { title: "Fast Charging Cable", subtitle: "$14.99 · Durable braided", icon: "star" },
+    ],
   },
   {
-    id: "3",
-    text: "Sure, it's sarah.m@email.com",
-    sender: "customer",
-    timestamp: new Date(Date.now() - 60000),
+    keywords: ["order", "tracking", "shipping", "delivery", "pending"],
+    recommendations: [
+      { title: "Volthub Express Shipping", subtitle: "$9.99 · Same day prep", icon: "info" },
+      { title: "Order Protection Plan", subtitle: "$4.99 · Covers returns", icon: "shopping" },
+    ],
+  },
+  {
+    keywords: ["return", "refund", "exchange"],
+    recommendations: [
+      { title: "Easy Returns Box", subtitle: "$6.99 · Prepaid label", icon: "shopping" },
+      { title: "Volthub Gift Card", subtitle: "$25+ · Flexible credit", icon: "star" },
+    ],
+  },
+  {
+    keywords: ["payment", "billing", "portal", "invoice"],
+    recommendations: [
+      { title: "Volthub Secure Wallet", subtitle: "$0.99 · One-click checkout", icon: "info" },
+      { title: "Billing Support Kit", subtitle: "Free · Guides and tools", icon: "shopping" },
+    ],
   },
 ];
 
-const CUSTOMER_RESPONSES = [
-  "Thank you, I'll try that now.",
-  "Yes, that's correct.",
-  "I see, is there anything else I need to do?",
-  "Great, that seems to be working now!",
-  "Could you also help me update my payment method?",
+const DEFAULT_RECOMMENDATIONS = [
+  { title: "Volthub Wireless Headset", subtitle: "$49.99 · Fast shipping", icon: "shopping" as const },
+  { title: "Volthub Smart Charger", subtitle: "$24.99 · 1-year warranty", icon: "star" as const },
 ];
+
+const getRecommendations = (messages: ChatMessage[]) => {
+  const latestCustomer = [...messages].reverse().find((m) => m.sender === "customer");
+  if (!latestCustomer) return DEFAULT_RECOMMENDATIONS;
+  const text = latestCustomer.text.toLowerCase();
+  const rule = PRODUCT_RECOMMENDATION_RULES.find((r) => r.keywords.some((k) => text.includes(k)));
+  return rule?.recommendations ?? DEFAULT_RECOMMENDATIONS;
+};
+
+const makeId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `msg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+// Subtle ping sound using Web Audio API
+const playPing = () => {
+  try {
+    const ctx = new AudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    oscillator.frequency.value = 880;
+    oscillator.type = "sine";
+    gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.3);
+  } catch (_) {}
+};
 
 const Index = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
-  const [isCustomerTyping, setIsCustomerTyping] = useState(false);
-  const [customerStatus, setCustomerStatus] = useState<"online" | "typing" | "offline">("online");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isBotTyping, setIsBotTyping] = useState(false);
+  const [botStatus, setBotStatus] = useState<"online" | "typing" | "offline">("online");
   const scrollRef = useRef<HTMLDivElement>(null);
-  const responseIndex = useRef(0);
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
   }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isCustomerTyping, scrollToBottom]);
+  }, [messages, isBotTyping, scrollToBottom]);
 
-  const simulateCustomerReply = useCallback(() => {
-    setIsCustomerTyping(true);
-    setCustomerStatus("typing");
+  const sendQuestion = useCallback(async (text: string) => {
+    setIsBotTyping(true);
+    setBotStatus("typing");
 
-    const delay = 1500 + Math.random() * 2000;
-    setTimeout(() => {
-      const text = CUSTOMER_RESPONSES[responseIndex.current % CUSTOMER_RESPONSES.length];
-      responseIndex.current++;
+    try {
+      const response = await askQuestion({ question: text });
+
+      // Mark previous customer messages as read
+      setMessages((prev) =>
+        prev.map((m) => (m.sender === "customer" ? { ...m, read: true } : m))
+      );
+
+      const agentMsg: ChatMessage = {
+        id: makeId(),
+        text: response.answer,
+        sender: "agent",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, agentMsg]);
+      playPing();
+      setBotStatus("online");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The bridge could not process that request right now.";
       setMessages((prev) => [
         ...prev,
-        {
-          id: crypto.randomUUID(),
-          text,
-          sender: "customer",
-          timestamp: new Date(),
-        },
+        { id: makeId(), text: `Backend error: ${message}`, sender: "agent", timestamp: new Date() },
       ]);
-      setIsCustomerTyping(false);
-      setCustomerStatus("online");
-    }, delay);
+      setBotStatus("offline");
+    } finally {
+      setIsBotTyping(false);
+    }
   }, []);
 
   const handleSend = (text: string) => {
     setMessages((prev) => [
       ...prev,
-      {
-        id: crypto.randomUUID(),
-        text,
-        sender: "agent",
-        timestamp: new Date(),
-      },
+      { id: makeId(), text, sender: "customer", timestamp: new Date(), read: false },
     ]);
-    setTimeout(simulateCustomerReply, 800);
+    void sendQuestion(text);
   };
+
+  const handleClearChat = () => {
+    setMessages([]);
+    setBotStatus("online");
+    setIsBotTyping(false);
+  };
+
+  const recommendations = useMemo(() => getRecommendations(messages), [messages]);
 
   return (
     <div className="h-screen flex bg-background">
-      {/* Sidebar */}
       <AppSidebar />
 
-      {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar
-          customerName="Sarah Mitchell"
-          status={customerStatus}
+          customerName="Volthub Support"
+          status={botStatus}
           connectionStatus="connected"
+          phoneNumber="+254 713 695 300"
+          onClearChat={handleClearChat}
         />
 
-        {/* Messages */}
-        <div
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto scrollbar-thin py-6 space-y-4"
-        >
+        <div ref={scrollRef} className="flex-1 overflow-y-auto scrollbar-thin py-6 space-y-4">
           <AnimatePresence>
             {messages.map((msg) => (
               <ChatBubble key={msg.id} message={msg} />
             ))}
           </AnimatePresence>
-          {isCustomerTyping && <TypingIndicator name="Sarah" />}
+          {isBotTyping && <TypingIndicator name="Rachel" />}
         </div>
 
         <MessageInput onSend={handleSend} />
       </div>
 
-      {/* Right info panel */}
-      <InfoPanel />
+      <InfoPanel recommendations={recommendations} onEndChat={handleClearChat} />
     </div>
   );
 };
