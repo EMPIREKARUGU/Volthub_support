@@ -7,6 +7,7 @@ import InfoPanel from "@/components/chat/InfoPanel";
 import AppSidebar from "@/components/chat/AppSidebar";
 import { AnimatePresence } from "framer-motion";
 import { askQuestion } from "@/lib/api";
+import CryptoJS from "crypto-js";
 
 const PRODUCT_RECOMMENDATION_RULES: {
   keywords: string[];
@@ -62,6 +63,24 @@ const getRecommendations = (messages: ChatMessage[]) => {
   return rule?.recommendations ?? DEFAULT_RECOMMENDATIONS;
 };
 
+// --- Encryption Helpers ---
+// Note: In production, store the secret key in your environment variables.
+const SECRET_KEY = import.meta.env.VITE_ENCRYPTION_SECRET || "default-secure-key";
+
+const encryptMessage = (text: string) => {
+  return CryptoJS.AES.encrypt(text, SECRET_KEY).toString();
+};
+
+const decryptMessage = (ciphertext: string) => {
+  try {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, SECRET_KEY);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    return decrypted || ciphertext; // Fallback to raw text if decryption fails
+  } catch (error) {
+    return ciphertext;
+  }
+};
+
 const makeId = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
@@ -114,7 +133,8 @@ const Index = () => {
 
       const agentMsg: ChatMessage = {
         id: makeId(),
-        text: response.answer,
+        // Decrypt the backend's response (with a fallback to plain text)
+        text: decryptMessage(response.answer),
         sender: "agent",
         timestamp: new Date(),
       };
