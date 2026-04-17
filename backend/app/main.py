@@ -102,11 +102,11 @@ class AskResponse(BaseModel):
     request_id: str
     timestamp: datetime
 
-@app.get("/health")
+@app.get("/health")  # Removed the response_model=HealthCheck part
 async def health():
     return {
         "status": "online", 
-        "inventory_loaded": "true"  # Change True (boolean) to "true" (string)
+        "inventory_loaded": True 
     }
 
 @app.post("/ask", response_model=AskResponse)
