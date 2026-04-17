@@ -87,6 +87,8 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://volthub-support.vercel.app", # 👈 Add your ACTUAL Vercel URL here
+        "https://live-conversation-hub.vercel.app", # 👈 And this one if it's different
     ],
     allow_credentials=True,
     allow_methods=["*"],
