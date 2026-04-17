@@ -7,7 +7,6 @@ import InfoPanel from "@/components/chat/InfoPanel";
 import AppSidebar from "@/components/chat/AppSidebar";
 import { AnimatePresence } from "framer-motion";
 import { askQuestion } from "@/lib/api";
-import CryptoJS from "crypto-js";
 
 const PRODUCT_RECOMMENDATION_RULES: {
   keywords: string[];

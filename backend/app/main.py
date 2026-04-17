@@ -103,8 +103,11 @@ class AskResponse(BaseModel):
     timestamp: datetime
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "online", "inventory_loaded": True}
+async def health():
+    return {
+        "status": "online", 
+        "inventory_loaded": "true"  # Change True (boolean) to "true" (string)
+    }
 
 @app.post("/ask", response_model=AskResponse)
 async def ask(payload: AskRequest) -> AskResponse:
