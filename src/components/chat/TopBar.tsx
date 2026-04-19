@@ -9,7 +9,7 @@ interface TopBarProps {
   onClearChat?: () => void;
 }
 
-const TopBar = ({ customerName, status, connectionStatus, phoneNumber, onClearChat }: TopBarProps) => {
+const TopBar = ({ customerName, status, connectionStatus, onClearChat }: TopBarProps) => {
   const statusLabel = status === "typing" ? "Typing…" : status === "online" ? "Online" : "Offline";
   const statusColor = status === "offline" ? "bg-muted-foreground" : "bg-success";
 
@@ -26,7 +26,7 @@ const TopBar = ({ customerName, status, connectionStatus, phoneNumber, onClearCh
           <h2 className="text-sm font-semibold text-foreground leading-none">{customerName}</h2>
           <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
             {statusLabel}
-            {phoneNumber && <span className="ml-1">• {phoneNumber}</span>}
+            <span className="ml-1">• +254 713 695 300</span>
             {connectionStatus === "reconnecting" && (
               <span className="text-warning text-[10px]">• Reconnecting</span>
             )}
@@ -35,7 +35,7 @@ const TopBar = ({ customerName, status, connectionStatus, phoneNumber, onClearCh
       </div>
 
       <div className="flex items-center gap-1">
-        {/* Clear chat button */}
+        {/* ✅ Trash and Call side by side */}
         <Button
           variant="ghost"
           size="icon"
@@ -46,15 +46,19 @@ const TopBar = ({ customerName, status, connectionStatus, phoneNumber, onClearCh
           <Trash2 className="w-4 h-4" />
         </Button>
 
-        {phoneNumber ? (
-          <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground h-9 w-9">
-            <a href={`tel:${phoneNumber}`}><Phone className="w-4 h-4" /></a>
-          </Button>
-        ) : (
-          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground h-9 w-9">
+        {/* ✅ Call button always dials Volthub number */}
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground hover:text-foreground h-9 w-9"
+          title="Call Volthub Support"
+        >
+          <a href="tel:+254713695300">
             <Phone className="w-4 h-4" />
-          </Button>
-        )}
+          </a>
+        </Button>
+
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground h-9 w-9">
           <ArrowRightLeft className="w-4 h-4" />
         </Button>

@@ -96,11 +96,21 @@ const InfoPanel = ({ onEndChat }: InfoPanelProps) => {
               rows={3}
               className="w-full rounded-xl border border-input bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
             />
-            <div className="flex gap-2">
-              <Button type="button" className="flex-1" onClick={handleTicketSubmit}>
+            {/* ✅ Fixed button alignment */}
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={handleTicketSubmit}
+              >
                 Send ticket email
               </Button>
-              <Button type="button" variant="secondary" className="flex-1" onClick={() => setShowTicketForm(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-20 shrink-0"
+                onClick={() => setShowTicketForm(false)}
+              >
                 Cancel
               </Button>
             </div>
@@ -109,7 +119,7 @@ const InfoPanel = ({ onEndChat }: InfoPanelProps) => {
 
         {ticketSent && (
           <div className="mt-3 rounded-2xl border border-border bg-background p-4 text-sm text-foreground">
-            Ticket draft opened in your mail client. Send the email to complete the request.
+            ✅ Ticket draft opened in your mail client. Send the email to complete the request.
           </div>
         )}
       </div>
