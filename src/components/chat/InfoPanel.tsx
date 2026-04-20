@@ -98,22 +98,22 @@ const InfoPanel = ({ onEndChat }: InfoPanelProps) => {
             />
             {/* ✅ Fixed button alignment */}
             <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                className="flex-1"
-                onClick={handleTicketSubmit}
-              >
-                Send ticket email
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-20 shrink-0"
-                onClick={() => setShowTicketForm(false)}
-              >
-                Cancel
-              </Button>
-            </div>
+            <Button
+              type="button"
+              className="flex-1 h-10"
+              onClick={handleTicketSubmit}
+            >
+              Send     email
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-20 h-10 shrink-0"
+              onClick={() => setShowTicketForm(false)}
+            >
+              Cancel
+            </Button>
+          </div>
           </div>
         )}
 
