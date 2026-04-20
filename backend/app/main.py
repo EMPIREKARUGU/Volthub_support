@@ -40,29 +40,42 @@ vector_db = Chroma(
     embedding_function=embeddings
 )
 
-# ✅ Groq instead of Gemini
+# ✅ temperature=0.0 for maximum factuality
 llm = ChatGroq(
     model="llama-3.3-70b-versatile",
     api_key=os.getenv("GROQ_API_KEY"),
-    temperature=0.2
+    temperature=0.0
 )
 
-retriever = vector_db.as_retriever(search_kwargs={"k": 3})
+# ✅ k=5 for more context = less hallucination
+retriever = vector_db.as_retriever(search_kwargs={"k": 5})
 
+# ✅ Strict prompt to keep Rachel on scope
 prompt = ChatPromptTemplate.from_template("""
-You are Rachel, a friendly and helpful customer support agent for VoltHub Kenya, 
-a shop that sells electronics and solar energy products.
-Use the following product information to answer the customer's question naturally and helpfully.
-If the product is not in the context, say so honestly but remain helpful.
-Always mention prices in KSh when available.
+You are Rachel, a customer support agent for VoltHub Kenya, an electronics and solar energy shop.
 
-Context: {context}
+STRICT RULES:
+- ONLY answer questions about VoltHub products, prices, and services
+- ONLY use information from the context provided below
+- If a product is NOT in the context, say "I don't have that product in our current inventory"
+- NEVER make up prices, specifications, or product details
+- NEVER answer questions unrelated to VoltHub (no general knowledge, no coding help, no news)
+- If asked something off-topic, say "I can only help with VoltHub Kenya product inquiries"
+- Always mention prices in KSh when available
+- Keep responses concise and helpful
+- If context says "NO PRODUCTS FOUND IN INVENTORY", tell the customer that product is not available and suggest they call +254 713 695 300
+
+Context (VoltHub inventory):
+{context}
 
 Customer Question: {question}
 
 Rachel:""")
 
+# ✅ Fallback when no docs found
 def format_docs(docs):
+    if not docs:
+        return "NO PRODUCTS FOUND IN INVENTORY"
     return "\n\n".join(doc.page_content for doc in docs)
 
 rag_chain = (
@@ -71,6 +84,18 @@ rag_chain = (
     | llm
     | StrOutputParser()
 )
+
+# ✅ Off-topic filter
+OFF_TOPIC_KEYWORDS = [
+    "weather", "news", "politics", "code", "programming",
+    "recipe", "joke", "sports", "movie", "music", "history",
+    "math", "science", "geography", "capital city", "who is",
+    "what is the meaning", "translate", "poem", "essay"
+]
+
+def is_off_topic(question: str) -> bool:
+    q = question.lower()
+    return any(keyword in q for keyword in OFF_TOPIC_KEYWORDS)
 
 # --- FASTAPI SETUP ---
 app = FastAPI(
@@ -81,7 +106,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # This allows ALL origins for testing
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -96,11 +121,11 @@ class AskResponse(BaseModel):
     request_id: str
     timestamp: datetime
 
-@app.get("/health")  # Removed the response_model=HealthCheck part
+@app.get("/health")
 async def health():
     return {
-        "status": "online", 
-        "inventory_loaded": True 
+        "status": "online",
+        "inventory_loaded": True
     }
 
 @app.post("/ask", response_model=AskResponse)
@@ -109,11 +134,20 @@ async def ask(payload: AskRequest) -> AskResponse:
     if not question:
         raise HTTPException(status_code=422, detail="Question cannot be empty.")
 
+    # ✅ Reject off-topic questions immediately
+    if is_off_topic(question):
+        return AskResponse(
+            answer="I can only help with VoltHub Kenya product inquiries. Please ask me about our products, prices, or services. For other assistance, call us on +254 713 695 300.",
+            question=question,
+            request_id=str(uuid4()),
+            timestamp=datetime.now(timezone.utc),
+        )
+
     try:
         answer = await asyncio.to_thread(rag_chain.invoke, question)
 
     except Exception as e:
-        print(f"Error during RAG: {e}")
+        print(f"Error during RAG: {type(e).__name__}")
         raise HTTPException(status_code=500, detail="Rachel is having trouble accessing the inventory.")
 
     return AskResponse(
